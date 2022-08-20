@@ -2,13 +2,16 @@ const express = require('express')
 const router = express.Router()
 const Task = require('../models/task')
 const status = require('http-status')
+const auth = require('../middleware/auth')
 
-router.post('/tasks',async (req, res) => {
-    const task = new Task(req.body)
+router.post('/tasks', auth, async (req, res) => {
+    const task = new Task({
+        ...req.body,
+        owner: req.user._id
+    })
 
     try {
         const savedTask = await task.save()
-        console.log(savedTask)
         res.status(status.CREATED).send(savedTask)
     } catch (e) {
         res.status(status.INTERNAL_SERVER_ERROR).send(e)
@@ -54,6 +57,10 @@ router.patch('/tasks/:id',async (req, res) => {
 
     try {
         const task = await Task.findByIdAndUpdate(_id, req.body, { new: true, runValidators: true })
+
+        //      const task = await Task.findById(_id)
+        //      updates.forEach((update) => task[update] = req.body[update])
+        //      await task.save()
 
         if (!task) {
             return res.status(status.NOT_FOUND).send()
